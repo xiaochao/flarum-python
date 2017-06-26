@@ -21,10 +21,20 @@ class Flarum(object):
                         'Cache-Control': 'no-cache', 'Referer': 'http://1juh.com/',
                         'Content-Type': 'application/json; charset=UTF-8',
                         'Authorization': 'Token '}
+        self.tags = {
+            'tech': 1,
+            'funny': 3,
+            'sentiment': 4,
+            'discovery': 5,
+            'growup': 6
+        }
+
+    def set_tags(self, tags):
+        self.tags = tags
 
     def http_requests(self, url, params, method='post'):
         try:
-            if url.find('/api/token') > 0:
+            if method == 'get' or url.find('/api/token') > 0:
                 headers = dict()
             else:
                 headers = self.headers
@@ -33,7 +43,7 @@ class Flarum(object):
             else:
                 r = requests.get(url, params=params, timeout=self.timeout, headers=headers)
             if r.status_code != 200:
-                print 'http code error:', r.status_code
+                print url, 'http code error:', r.status_code, r.text
                 return None
             return json.loads(r.text)
         except Exception, e:
@@ -55,26 +65,34 @@ class Flarum(object):
     def get_discussions(self):
         url = self.base_url+'/api/discussions'
         data = self.http_requests(url, {}, method='get')
-        print json.dumps(data)
 
-    def create_discussions(self, title, description):
+    def get_tags(self):
+        url = self.base_url+'/api/tags'
+        data = self.http_requests(url, {}, method='get')
+        print data
+
+    def create_discussions(self, title, description, tag_id):
         url = self.base_url+'/api/discussions'
-        params = {"data":
-                      {
-                          "type": "discussions",
-                          "attributes":{
-                              "title": title,
-                              "content": description
-                          },
-                          "relationships":{
-                              "tags":{
-                                  "data":[{
-                                      "type":"tags","id":"1"
-                                  }]
-                              }
-                          }
-                      }
-                  }
+        params = {
+            "data":
+                {
+                    "type": "discussions",
+                    "attributes":{
+                        "title": title,
+                        "content": description
+                    },
+                    "relationships":{
+                        "tags":{
+                            "data":[
+                                {
+                                    "type":"tags",
+                                    "id":tag_id
+                                }
+                            ]
+                        }
+                    }
+                }
+        }
         data = self.http_requests(url, json.dumps(params))
         print data
 
@@ -85,4 +103,4 @@ if __name__ == '__main__':
     import sys
     test = Flarum()
     is_token = test.get_token(sys.argv[1], sys.argv[2])
-    test.create_discussions('测试登录成功后是否能够成功', '测试使用api登录成功后能否创建')
+    print test.get_tags()
